@@ -1,17 +1,45 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const nedb = require('nedb-promises')
 const app = express();
+const database = new nedb({ filename: 'accounts.db', autoload: true });
 
-app.use(express.static('frontend'));
+app.use(express.static('../frontend'));
 app.use(express.json());
 app.use(cookieParser());
 
 
+async function admin(request, response, next) {
+    const cookie = request.cookies.loggedIn;
 
-let accounts = [];
+    console.log('I ADMIN MIDDLEWARE');
 
-app.post('/api/signup', (request, response) => {
+    try {
+        const account = await database.find({ cookie: parseInt(cookie) });
+        
+        //Ifall vi inte hittar något användarkonto
+        if (account.length == 0) {
+            throw new Error(); //Kommer istället att hoppa till catch
+        } else if (account[0].role == 'admin') { //Ifall användarkontot har rollen admin
+            next(); //Kommer hoppa vidare till nästa funktionen i route:n
+        } else { //I alla andra fall
+            throw new Error();
+        }
+    } catch (error) {
+        console.log('Rollen var inte admin, i catch');
+
+        const resObj = {
+            success: false,
+            errorMessage: 'Unauthorized'
+        }
+
+        response.json(resObj);
+    }    
+}
+
+app.post('/api/signup', async (request, response) => {
     const credentials = request.body;
+    console.log('----/API/SIGNUP-----');
     // { username: 'Alice', email:'alice@wonderland.com', password: 'pwd123' }
     const resObj = {
         success: true,
@@ -19,60 +47,75 @@ app.post('/api/signup', (request, response) => {
         emailExists: false
     }
 
-    accounts.forEach((account) => {
-        if (account.username == credentials.username) {
-            resObj.usernameExists = true;
-        } else if (account.email == credentials.email) {
-            resObj.emailExists = true;
-        }
-    });
+    const usernameExists = await database.find({ username: credentials.username });
+    const emailExists = await database.find({ email: credentials.email });
+
+    console.log(usernameExists);
+    console.log(emailExists);
+
+    if (usernameExists.length > 0) {
+        resObj.usernameExists = true;
+    }
+    if (emailExists.length > 0) {
+        resObj.emailExists = true;
+    }
 
     if(resObj.usernameExists == true || resObj.emailExists == true) {
         resObj.success = false;
     } else {
-        accounts.push(credentials);
+        if (credentials.username == 'ada') {
+            credentials.role = 'admin'
+        } else {
+            credentials.role = 'user';
+        }
+
+        console.log(credentials);
+        database.insert(credentials);
     }
 
     response.json(resObj);
 });
 
-app.post('/api/login', (request, response) => {
+app.post('/api/login', async (request, response) => {
     const credentials = request.body;
     // { username: 'Ada', password: 'pwd123' }
+    console.log('----/API/LOGIN-----');
 
     const resObj = {
         success: false
     }
 
-    accounts.forEach((account) => {
-        if (account.username == credentials.username &&
-            account.password == credentials.password ) {
-                resObj.success = true;
+    const account = await database.find({ username: credentials.username });
+    console.log(account);
 
-                const cookieId = Math.round(Math.random() * 10000);
+    if (account.length > 0) {
+        if (account[0].password == credentials.password) {
+            resObj.success = true;
 
-                account.cookie = cookieId;
+            const cookieId = Math.round(Math.random() * 10000);
 
-                response.cookie('loggedIn', cookieId);
+            database.update({ username: credentials.username }, { $set: { cookie: cookieId }});
+
+            response.cookie('loggedIn', cookieId);
         }
-    });
+    }
 
     response.json(resObj);
 });
 
-app.get('/api/loggedin', (request, response) => {
+app.get('/api/loggedin', async (request, response) => {
     const cookie = request.cookies.loggedIn;
+
+    console.log('----/API/LOGGEDIN-----');
 
     let resObj = {
         loggedIn: false
     }
 
-    if (cookie) {
-        accounts.forEach((account) => {
-            if (account.cookie == cookie) {
-                resObj.loggedIn = true;
-            }
-        });
+    const account = await database.find({ cookie: parseInt(cookie) });
+
+    if (account.length > 0 ) {
+        resObj.loggedIn = true;
     }
 
     response.json(resObj);
@@ -81,6 +124,8 @@ app.get('/api/loggedin', (request, response) => {
 app.get('/api/logout', (request, response) => {
     response.clearCookie('loggedIn');
 
+    console.log('----/API/LOGOUT-----');
+
     const resObj = {
         success: true
     }
@@ -88,38 +133,58 @@ app.get('/api/logout', (request, response) => {
     response.json(resObj);
 });
 
-app.get('/api/account', (request, response) => {
+app.get('/api/account', async (request, response) => {
     const cookie = request.cookies.loggedIn;
 
+    console.log('----/API/ACCOUNT-----');
+
     const resObj = {
-        email: ''
+        email: '',
+        role: ''
     }
 
-    accounts.forEach((account) => {
-        if (account.cookie == cookie) {
-            console.log(account);
-            resObj.email = account.email;
-        }
-    });
+    const account = await database.find({ cookie: parseInt(cookie) });
+
+    if (account.length > 0) {
+        resObj.email = account[0].email;
+        resObj.role = account[0].role;
+    }
 
     response.json(resObj);
 });
 
-app.get('/api/remove', (request, response) => {
+app.get('/api/remove', admin, (request, response) => {
     const cookie = request.cookies.loggedIn;
+
+    console.log('----/API/REMOVE-----');
 
     const resObj = {
         success: true
     }
 
-    accounts = accounts.filter((account) => {
-        if (account.cookie !== parseInt(cookie)) {
-            return account;
-        }
-    });
+    database.remove({ cookie: parseInt(cookie)} );
 
-    console.log(accounts);
     response.clearCookie('loggedIn');
+    response.json(resObj);
+});
+
+app.get('/api/user-accounts', admin, async (request, response) => {
+    const resObj = {
+        success: false,
+        accounts: ''
+    }
+
+    console.log('----/API/USER-ACCOUNTS-----');
+
+    // multi: true är för att annars får vi bara den första träffen och vi vill ha alla träffar
+    // med rollen user
+    const userAccounts = await database.find({ role: 'user' });
+
+    if (userAccounts.length > 0) {
+        resObj.success = true;
+        resObj.accounts = userAccounts;
+    }
+
     response.json(resObj);
 });
 

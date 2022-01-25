@@ -1,5 +1,5 @@
 const usernameElem = document.querySelector('#username');
-const emailElem = document.querySelector('#email');
+const emailElemn = document.querySelector('#email');
 const password = document.querySelector('#password');
 const createButtonElem = document.querySelector('#create-button');
 
@@ -38,7 +38,7 @@ async function login(loginInformation) {
 createButtonElem.addEventListener('click', () => {
     let accountInformation = {
         username: usernameElem.value,
-        email: emailElem.value,
+        email: emailElemn.value,
         password: password.value
     }
 
