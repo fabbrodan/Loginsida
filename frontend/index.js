@@ -31,7 +31,7 @@ async function login(loginInformation) {
     console.log(data);
 
     if (data.success) {
-        window.location.href = 'http://localhost:5000/loggedin.html';
+        window.location.href = 'http://localhost:5000/loggedIn.html';
     }
 }
 
@@ -54,7 +54,7 @@ if (account.length > 0) {
 }
 
 response.json(resObj);
-});
+
 
 createButtonElem.addEventListener('click', () => {
     let accountInformation = {
@@ -74,9 +74,9 @@ loginButton.addEventListener('click', () => {
         password: loginPassword.value
     }
 
-PurchaseElem.addEventListener('click', () => {
+/*PurchaseElem.addEventListener('click', () => {
     Math.floor((Math.random() *100) +1);
-})
+})*/
 
     login(loginInformation);
 });

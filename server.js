@@ -1,5 +1,4 @@
 const express = require('express');
-const cookieParser = require('cookie-parser');
 const nedb = require('nedb-promises');
 const jwt = require('jsonwebtoken');
 const app = express();
@@ -9,7 +8,7 @@ const database = new nedb({ filename: 'accounts.db', autoload: true });
 
 const  { hashPassword, comparePassword } = require('./utils/bcrypt'); 
 const { generateRandom, generateEta } = require('./utils/utils');
- 
+module.exports = { getAccountByUsername, saveAccount, saveMenu, getMenu, createOrderContainer, saveOrder } = require('./database/operations')
 
 app.use(express.static('frontend'));
 app.use(express.json());
