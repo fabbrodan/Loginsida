@@ -1,12 +1,19 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const nedb = require('nedb-promises')
+const nedb = require('nedb-promises');
+const jwt = require('jsonwebtoken');
 const app = express();
 const database = new nedb({ filename: 'accounts.db', autoload: true });
 
-app.use(express.static('../frontend'));
+
+
+const  { hashPassword, comparePassword } = require('./utils/bcrypt'); 
+const { generateRandom, generateEta } = require('./utils/utils');
+ 
+
+app.use(express.static('frontend'));
 app.use(express.json());
-app.use(cookieParser());
+
 
 
 async function admin(request, response, next) {
@@ -15,7 +22,7 @@ async function admin(request, response, next) {
     console.log('I ADMIN MIDDLEWARE');
 
     try {
-        const account = await database.find({ cookie: parseInt(cookie) });
+       // const account = await database.find({ cookie: parseInt(cookie) });
         
         //Ifall vi inte hittar något användarkonto
         if (account.length == 0) {
@@ -78,7 +85,7 @@ app.post('/api/signup', async (request, response) => {
 
 app.post('/api/login', async (request, response) => {
     const credentials = request.body;
-    // { username: 'Ada', password: 'pwd123' }
+    // { username: 'admin', password: 'pwd123' }
     console.log('----/API/LOGIN-----');
 
     const resObj = {
