@@ -8,7 +8,7 @@ const database = new nedb({ filename: 'accounts.db', autoload: true });
 
 const  { hashPassword, comparePassword } = require('./utils/bcrypt'); 
 const { generateRandom, generateEta } = require('./utils/utils');
-module.exports = { getAccountByUsername, saveAccount, saveMenu, getMenu, createOrderContainer, saveOrder } = require('./database/operations')
+const { getAccountByUsername, saveAccount, saveMenu, getMenu, createOrderContainer, saveOrder } = require('./database/operations')
 
 app.use(express.static('frontend'));
 app.use(express.json());
@@ -69,7 +69,7 @@ app.post('/api/signup', async (request, response) => {
     if(resObj.usernameExists == true || resObj.emailExists == true) {
         resObj.success = false;
     } else {
-        if (credentials.username == 'ada') {
+        if (credentials.username == 'Ada') {
             credentials.role = 'admin'
         } else {
             credentials.role = 'user';

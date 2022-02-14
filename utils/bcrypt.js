@@ -11,4 +11,4 @@ async function comparePassword(password, storedPassword) {
     return isTheSame;
 }
 
-module.exports = {hashPassword, comparePassword}
+module.exports.defaults = {hashPassword, comparePassword}

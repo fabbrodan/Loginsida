@@ -1,6 +1,9 @@
+import { generateRandom, generateEta } from './utils/utils';
+import { getAccountByUsername, saveAccount, saveMenu, getMenu, createOrderContainer, saveOrder } from './database/operations';
+
 const usernameElem = document.querySelector('#username');
 const password = document.querySelector('#password');
-const createButtonElem = document.querySelector('#create-button');
+const purchaseButton = document.querySelectorAll('.purchase-button')
 const PurchaseElem = document.querySelector('#Purchase');
 
 const loginUsername = document.querySelector('#login-username');
@@ -35,12 +38,12 @@ async function login(loginInformation) {
     }
 }
 
-
-const account = await getAccountByUsername(credentials.username);
+async function testLogin(loginInformation) {
+const account = await getAccountByUsername(loginInformation.userName);
 console.log(account);
 
 if (account.length > 0) {
-    const correctPassword = await comparePassword(credentials.password, account[0].password);
+    const correctPassword = await comparePassword(loginInformation.password, account[0].password);
     if (correctPassword) {
         resObj.success = true;
 
@@ -55,20 +58,16 @@ if (account.length > 0) {
 
 response.json(resObj);
 
+}
 
-createButtonElem.addEventListener('click', () => {
-    let accountInformation = {
-        username: usernameElem.value,
-        email: emailElemn.value,
-        password: password.value
-    }
+purchaseButton.forEach((current) => {
+    current.addEventListener('click', () => {
+        console.log(generateRandom())
+    })
+}
+);
 
-    createAccount(accountInformation);
-    console.log(`Kontouppgifter: ${JSON.stringify(accountInformation)}`);
-    //console.log('Kontouppgifter: ' + accountInformation);
-});
-
-loginButton.addEventListener('click', () => {
+loginButton.addEventListener("click", function() {
     let loginInformation = {
         username: loginUsername.value,
         password: loginPassword.value
@@ -78,5 +77,5 @@ loginButton.addEventListener('click', () => {
     Math.floor((Math.random() *100) +1);
 })*/
 
-    login(loginInformation);
+    testLogin(loginInformation);
 });
