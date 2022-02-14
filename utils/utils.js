@@ -10,4 +10,4 @@ function generateEta() {
     return eta + Math.floor(Math.random() * 20);
 }
 
-module.exports = { generateRandom, generateEta }
+module.exports.defaults = { generateRandom, generateEta }
